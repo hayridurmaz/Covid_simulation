@@ -2,7 +2,9 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import random as rm
-
+import os
+import sys
+import argparse as arg
 
 def getPeopleRecovered(t, z_list):
     recovered_t_delay = 2
@@ -110,9 +112,20 @@ def activity_forecast(days, stateToday="Susceptible"):
         i += 1
     return stateList
 
+def Arg_Parse():
+    Arg_Par = arg.ArgumentParser()
+    Arg_Par.add_argument("-d", "--Death",
+                         help="Current death rate")
+    Arg_Par.add_argument("-r", "--recovery",
+                         help="Current recovery rate")
+    arg_list = vars(Arg_Par.parse_args())
+    return arg_list
 
 if __name__ == '__main__':
-
+    if len(sys.argv) == 1:
+        print("Please Provide an argument !!!")
+        sys.exit(0)
+    Arg_list = Arg_Parse()
 
     # The statespace
     states = ["Susceptible", "Infected", "Recovered", "Dead"]
