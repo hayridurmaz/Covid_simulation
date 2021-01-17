@@ -1,5 +1,7 @@
 import math
 import matplotlib.pyplot as plt
+import numpy as np
+import random as rm
 
 
 def getPeopleRecovered(t, z_list):
@@ -50,39 +52,102 @@ def infectionRate(t, z_list, total_pop):
     return temp
 
 
+# A function that implements the Markov model to forecast the state/mood.
+def activity_forecast(days, stateToday="Susceptible"):
+    startingProbabilities = [[0.2, 0.6, 0.2, 0], [0, 0.1, 0.6, 0.3], [0, 0, 1, 0], [0, 0, 0, 1]]
+    stateList = [stateToday]
+    i = 0
+    prob = 1
+    while i != days:
+        if stateToday == "Susceptible":
+            change = np.random.choice(transitionName[0], replace=True, p=transitionMatrix[0])
+            if change == "SS":
+                prob = prob * startingProbabilities[0][0]
+                stateList.append("Susceptible")
+                pass
+            elif change == "SI":
+                prob = prob * startingProbabilities[0][1]
+                stateToday = "Infected"
+                stateList.append("Infected")
+            else:
+                prob = prob * startingProbabilities[0][2]
+                stateToday = "Recovered"
+                stateList.append("Recovered")
+        elif stateToday == "Infected":
+            change = np.random.choice(transitionName[1], replace=True, p=transitionMatrix[1])
+            if change == "II":
+                prob = prob * startingProbabilities[1][1]
+                stateList.append("Infected")
+                pass
+            elif change == "IR":
+                prob = prob * startingProbabilities[1][2]
+                stateToday = "Recovered"
+                stateList.append("Recovered")
+            else:
+                prob = prob * startingProbabilities[1][3]
+                stateToday = "Dead"
+                stateList.append("Dead")
+        elif stateToday == "Recovered":
+            change = np.random.choice(transitionName[2], replace=True, p=transitionMatrix[2])
+            if change == "DD":
+                prob = prob * startingProbabilities[2][2]
+                stateList.append("Recovered")
+                pass
+            else:
+                prob = prob * 0
+                stateToday = "N/A"
+                stateList.append("N/A")
+        elif stateToday == "Dead":
+            change = np.random.choice(transitionName[2], replace=True, p=transitionMatrix[3])
+            if change == "DD":
+                prob = prob * startingProbabilities[3][3]
+                stateList.append("Dead")
+                pass
+            else:
+                prob = prob * 0
+                stateToday = "N/A"
+                stateList.append("N/A")
+        i += 1
+    return stateList
+
+
 if __name__ == '__main__':
-    z = []
-    rt_list = []
-    qt_list = []
 
-    recovered = []
 
-    z.append(10)
+    # The statespace
+    states = ["Susceptible", "Infected", "Recovered", "Dead"]
 
-    for i in range(0, len(z)):
-        print("i:", i, ", infected people number =", z[i])
+    # Possible sequences of events
+    transitionName = [["SS", "SI", "SR", "SD"], ["IS", "II", "IR", "ID"], ["RS", "RI", "RR", "RD"],
+                      ["DS", "DI", "DR", "DD"]]
 
-    # print("recovered",recoveredPeople(0,z))
+    # Probabilities matrix (transition matrix)
+    transitionMatrix = [[0.2, 0.6, 0.2, 0], [0, 0.1, 0.6, 0.3], [0, 0, 1, 0], [0, 0, 1, 0]]
 
-    total_pop = 5000
+    if sum(transitionMatrix[0]) + sum(transitionMatrix[1]) + sum(transitionMatrix[2]) + sum(transitionMatrix[3]) != 4:
+        print("Somewhere, something went wrong. Transition matrix, perhaps?")
+    else:
+        print("All is gonna be okay, you should move on!! ;)")
 
-    total_recovered = 0
+    # Function that forecasts the possible state for the next 2 days
+    activity_forecast(2)
 
-    for t in range(0, 12):
-        #    recovered.append(getPeopleRecovered(t,z))
-        #    for i in range(0,len(recovered)):
-        #        total_recovered = total_recovered + recovered[i]
+    # To save every activityList
+    list_activity = []
+    count = 0
 
-        z_next = math.floor(
-            (total_pop - getPeopleRecovered(t, z) - getPeopleInQuarantine(t, z)) * infectionRate(t, z, total_pop)) + z[
-                     t]
-        print("t :", t, " , z_next :", z_next)
-        if z_next > total_pop:
-            print("simulation is stopped")
-            break
-        else:
-            z.append(z_next)
+    # `Range` starts from the first count up until but excluding the last count
+    for iterations in range(1, 10000):
+        list_activity.append(activity_forecast(2))
 
-    plt.plot(z)
-    plt.show()
+    # Check out all the `activityList` we collected
+    # print(list_activity)
 
+    # Iterate through the list to get a count of all activities ending in state:'Run'
+    for smaller_list in list_activity:
+        if (smaller_list[2] == "Dead"):
+            count += 1
+
+    # Calculate the probability of starting from state:'Sleep' and ending at state:'Run'
+    percentage = (count / 10000) * 100
+    print("The probability of starting at state:'Susp' and ending at state:'Dead'= " + str(percentage) + "%")
